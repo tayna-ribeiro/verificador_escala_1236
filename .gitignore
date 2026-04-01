@@ -1,0 +1,23 @@
+# Variáveis de ambiente (contém tokens e senhas — NUNCA suba isso!)
+.env
+
+# Cache do Python
+__pycache__/
+*.py[cod]
+*.pyo
+
+# Ambientes virtuais
+venv/
+.venv/
+env/
+
+# IDEs
+.vscode/
+.idea/
+
+# Arquivos de sistema
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
