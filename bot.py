@@ -121,10 +121,9 @@ async def cancelar(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     await update.message.reply_text("Processo cancelado. É só chamar /verificar quando precisar!")
     return ConversationHandler.END
 
-def main():
+def setup_application():
     if not TOKEN:
-        print("Erro: BOT_TOKEN não encontrado no arquivo .env!")
-        return
+        raise ValueError("BOT_TOKEN não encontrado no arquivo .env!")
 
     app = ApplicationBuilder().token(TOKEN).build()
 
@@ -144,7 +143,15 @@ def main():
 
     app.add_handler(CommandHandler("start", start))
     app.add_handler(conv_handler)
-    
+    return app
+
+def main():
+    try:
+        app = setup_application()
+    except ValueError as e:
+        print(f"Erro: {e}")
+        return
+
     print("\n" + "="*40)
     print(" 🤖 O Bot foi iniciado com sucesso!")
     print("="*40)
