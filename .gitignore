@@ -21,3 +21,9 @@ Thumbs.db
 
 # Logs
 *.log
+
+# Testes e Diagnosticos
+check_webhook.py
+remove_webhook.py
+configurar_webhook.py
+teste_webhook.py

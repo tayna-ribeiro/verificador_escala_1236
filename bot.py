@@ -125,7 +125,15 @@ def setup_application():
     if not TOKEN:
         raise ValueError("BOT_TOKEN não encontrado no arquivo .env!")
 
-    app = ApplicationBuilder().token(TOKEN).build()
+    builder = ApplicationBuilder().token(TOKEN)
+    
+    # Em contas gratuitas do PythonAnywhere o uWSGI as vezes perde as variáveis de ambiente do Proxy
+    # Configurar explicitamente resolve problemas de timeout/bloqueio reverso.
+    if os.environ.get('PYTHONANYWHERE_SITE'):
+        proxy = "http://proxy.server:3128"
+        builder = builder.proxy(proxy).get_updates_proxy(proxy)
+
+    app = builder.build()
 
     conv_handler = ConversationHandler(
         entry_points=[
