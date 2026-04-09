@@ -32,7 +32,7 @@ logging.basicConfig(
 
 DATA_BASE, DATA_CONSULTA = range(2)
 
-async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     user = update.effective_user
     nome = user.first_name if user else "usuário"
     
@@ -49,6 +49,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         parse_mode="Markdown",
         reply_markup=reply_markup
     )
+    return ConversationHandler.END
 
 async def iniciar_verificacao(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     msg = "📝 Vamos lá! Primeiro, me diga: *qual foi a data do seu último plantão (dia de trabalho)?*\n\n" \
@@ -121,6 +122,17 @@ async def cancelar(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     await update.message.reply_text("Processo cancelado. É só chamar /verificar quando precisar!")
     return ConversationHandler.END
 
+async def mensagem_fora_de_contexto(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Responde a mensagens de texto enviadas fora de qualquer fluxo ativo."""
+    keyboard = [
+        [InlineKeyboardButton("🔍 Verificar Minha Escala", callback_data="verificar")],
+    ]
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    await update.message.reply_text(
+        "Não entendi. 😅 Use o botão abaixo ou digite /verificar para consultar sua escala!",
+        reply_markup=reply_markup
+    )
+
 def setup_application():
     if not TOKEN:
         raise ValueError("BOT_TOKEN não encontrado no arquivo .env!")
@@ -137,20 +149,25 @@ def setup_application():
 
     conv_handler = ConversationHandler(
         entry_points=[
+            CommandHandler("start", start),
             CommandHandler("verificar", iniciar_verificacao),
             CallbackQueryHandler(iniciar_verificacao, pattern="^verificar$"),
-            # Qualquer texto fora da conversa reinicia o fluxo
-            MessageHandler(filters.TEXT & ~filters.COMMAND, iniciar_verificacao),
         ],
         states={
             DATA_BASE: [MessageHandler(filters.TEXT & ~filters.COMMAND, receber_data_base)],
             DATA_CONSULTA: [MessageHandler(filters.TEXT & ~filters.COMMAND, receber_data_consulta)],
         },
-        fallbacks=[CommandHandler("cancelar", cancelar)]
+        fallbacks=[
+            CommandHandler("cancelar", cancelar),
+            CommandHandler("start", start),
+            CommandHandler("verificar", iniciar_verificacao),
+        ],
+        allow_reentry=True,
     )
 
-    app.add_handler(CommandHandler("start", start))
     app.add_handler(conv_handler)
+    # Handler para textos enviados completamente fora do fluxo de conversa
+    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, mensagem_fora_de_contexto))
     return app
 
 def main():
